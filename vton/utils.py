@@ -22,7 +22,7 @@ def img_copy_by_json(from_path, to_path, json_file):
         print('from_path not exists')
         return
     if os.path.exists(to_path) == False:
-        os.mkdir(to_path)
+        os.makedirs(to_path)
 
     if from_path[-1] != '/':
         from_path += '/'
@@ -73,7 +73,7 @@ def anno_copy_by_img(img_path, from_path_anno, to_path_anno):
         print('img_path not exists')
         return
     if os.path.exists(to_path_anno) == False:
-        os.mkdir(to_path_anno)
+        os.makedirs(to_path_anno)
 
     if from_path_anno[-1] != '/':
         from_path_anno += '/'
@@ -244,7 +244,7 @@ def COCO_to_VIA(anno_dir, image_dir, category_id, save_anno_dir, mode="segmentat
         print('image_dir not exists')
         return
     if os.path.exists(save_anno_dir) == False:
-        os.mkdir(save_anno_dir)
+        os.makedirs(save_anno_dir)
 
     if anno_dir[-1] != '/':
         anno_dir += '/'
