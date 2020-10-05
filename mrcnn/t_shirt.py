@@ -6,7 +6,9 @@ from mrcnn.config import Config
 from mrcnn import utils
 
 import os
+from os.path import join as opj
 import datetime
+import json
 
 import numpy as np
 import skimage.draw
@@ -14,18 +16,44 @@ import cv2
 
 COCO_WEIGHTS_PATH = 'mask_rcnn_coco.h5'
 
-if not os.path.exists('../logs'):
-    os.mkdir('../logs')
-DEFAULT_LOGS_DIR = '../logs'
 
-class TshirtsConfig(Config):
+
+class TshirtConfig(Config):
     NAME = 'Tshirt'
     IMAGES_PER_GPU = 2
     NUM_CLASSES = 1 + 1
     STEPS_PER_EPOCH = 200
     DETECTION_MIN_CONFIDENCE = 0.98
 
-class TshirtsDataset(utils.Dataset):
+class TshirtDataset(utils.Dataset):
+    def load_tshirt(self, dataset_dir, subset):
+        self.add_class('Tshirt', 1, 'Tshirt')
+
+        assert subset in ['train', 'validation']
+        dataset_dir = opj(dataset_dir, subset)
+
+        annotations = json.load(open(opj(dataset_dir, 'via_region_data.json')))
+        annotations = list(annotations.values())
+
+        annotations = [a for a in annotations if a['regions']]
+
+        for a in annotations:
+            if type(a['regions']) is dict:
+                polygons = [r['shape_attributes'] for r in a['regions'].values()]
+            else:
+                polygons = [r['shape_attributes'] for r in a['regions']]
+
+            image_path = os.path.join(dataset_dir, 'image', a['filename'])
+            image = skimage.io.imread(image_path)
+            height, width = image.shape[:2]
+
+            self.add_image(
+                'Tshirt',
+                image_id=a['filename'],
+                path=image_path,
+                width=width, height=height,
+                polygons=polygons)
+
     def load_mask(self, image_id):
         image_info = self.image_info[image_id]
         if image_info['source'] != 'Tshirt':
@@ -63,9 +91,9 @@ def get_foreground_background(image, mask):
     return foreground, background
 
 def crop_and_pad(image_in, image_out, bbox):
-    if (bbox[2] - bbox[0]) % 2 != 0:
+    if (bbox[2] - bbox[0]) % 2:
         bbox[0] += 1
-    if (bbox[3] - bbox[1]) % 2 != 0:
+    if (bbox[3] - bbox[1]) % 2:
         bbox[1] += 1
 
     y1, x1, y2, x2 = bbox
@@ -113,8 +141,8 @@ def get_mask_save_segimage(model, image_path,
 
     bbox = crop_and_pad(fore, fore_file_path, r['rois'][0])
 
-    print('Foreground Saved to ', fore_file_path)
-    print('Background Saved to ', back_file_path)
+    print('Foreground Saved to', fore_file_path)
+    print('Background Saved to', back_file_path)
     return r['masks'], bbox
 
 def user_style_seg(user_input, style_input, model, weight, output_dir):
@@ -157,3 +185,71 @@ def image_rendering(tshirt, background, user_bbox, user_mask, output_dir):
 
     out_path = output_dir + f'final_output_{datetime.datetime.now():%Y%m%dT%H%M%S}'
     cv2.imwrite(out_path, out)
+
+def train(model, dataset, config):
+    dataset_train = TshirtDataset()
+    dataset_train.load_tshirt(dataset, 'train')
+    dataset_train.prepare()
+
+    dataset_val = TshirtDataset()
+    dataset_val.load_tshirt(dataset, 'validation')
+    dataset_val.prepare()
+
+    print('Training network heads')
+    model.train(
+        dataset_train,
+        dataset_val,
+        learning_rate=config.LEARNING_RATE,
+        epochs=30,
+        layers='heads'
+    )
+
+
+def color_splash(image, mask):
+    gray = skimage.color.gray2rgb(skimage.color.rgb2gray(image)) * 255
+    if mask.shape[-1] > 0:
+        mask = (np.sum(mask, -1, keepdims=True) >= 1)
+        splash = np.where(mask, image, gray).astype(np.uint8)
+    else:
+        splash = gray.astype(np.uint8)
+    return splash
+
+
+def detect_and_color_splash(model, image_path=None, video_path=None):
+    assert image_path or video_path
+
+    if image_path:
+        print(f'Running on {image_path}')
+        image = skimage.io.imread(image_path)
+        r = model.detect([image], verbose=1)[0]
+        splash = color_splash(image, r['masks'])
+        file_name = f'splash_{datetime.datetime.now():%Y%m%dT%H%M%S}.png'
+        skimage.io.imsave(file_name, splash)
+    elif video_path:
+        vcapture = cv2.VideoCapture(video_path)
+        width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = vcapture.get(cv2.CAP_PROP_FPS)
+
+        file_name = f'splash_{datetime.datetime.now():%Y%m%dT%H%M%S}.avi'
+        vwriter = cv2.VideoWriter(
+            file_name,
+            cv2.VideoWriter_fourcc(*'MJPG'),
+            fps,
+            (width, height)
+        )
+
+        count = 0
+        success = True
+        while success:
+            print('frame :', count)
+            success, image = vcapture.read()
+            if success:
+                image = image[..., ::-1]
+                r = model.detect([image], verbose=0)[0]
+                splash = color_splash(image, r['masks'])
+                splash = splash[..., ::-1]
+                vwriter.write(splash)
+                count += 1
+        vwriter.release()
+    print('Saved to', file_name)
