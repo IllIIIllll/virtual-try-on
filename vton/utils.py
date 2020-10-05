@@ -163,5 +163,5 @@ def coco_to_via(anno_dir, image_dir, category_id, save_anno_dir, mode="segmentat
                     }
                 }
             }
-    with open((save_anno_dir + json_file_name), 'w') as f:
+    with open(opj(save_anno_dir, json_file_name), 'w') as f:
         json.dump(VIA_dict, f)
