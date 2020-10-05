@@ -62,4 +62,8 @@
   
 <br>
 
+# Reference
+- [쇼핑몰 의류 가상착용 서비스 블로그](https://mylifemystudy.tistory.com/category/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/AI%20School%20%3A%3A%20%EC%87%BC%ED%95%91%EB%AA%B0%20%EC%9D%98%EB%A5%98%20%EA%B0%80%EC%83%81%EC%B0%A9%EC%9A%A9%20%EC%84%9C%EB%B9%84%EC%8A%A4)
+- [쇼핑몰 의류 가상착용 서비스 github](https://github.com/starbucksdolcelatte/FittingroomAnywhere)
+
 #### Open Source License는 [이곳](NOTICE.md)에서 확인해주시고, 문의사항은 [Issue](https://github.com/IllIIIllll/virtual-try-on/issues) 페이지에 남겨주세요.
