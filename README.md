@@ -48,7 +48,7 @@
 ```
 
 #### Mask_RCNN 모델
-[여기]에서 Mask_RCNN 모델을 다운로드 받아 아래와 같은 구조로 위치시킵니다.
+[여기](https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5)에서 Mask_RCNN 모델을 다운로드 받아 아래와 같은 구조로 위치시킵니다.
 ```
 .
 ├── data/
