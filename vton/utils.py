@@ -37,7 +37,6 @@ def t_shirt_img_copy(ori_anno_dir, ori_img_dir, selected_img, category_id):
             os.path.join(selected_img,data[0].replace('.json', '.jpg'))
         )
 
-
 def contains_category(anno_dir, category_id):
     contains = []
     MAX_FILES = 10000
