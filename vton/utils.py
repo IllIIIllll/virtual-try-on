@@ -116,6 +116,8 @@ def coco_to_via(anno_dir, image_dir, category_id, save_anno_dir, mode="segmentat
                         all_points_x, all_points_y = lm_to_points(
                             json_data['item2']['landmarks']
                         )
+                    if height < max(all_points_y) or width < max(all_points_x):
+                        continue
                     VIA_dict[img_path] = {
                         "fileref": "",
                         "size": img_size,
@@ -145,6 +147,8 @@ def coco_to_via(anno_dir, image_dir, category_id, save_anno_dir, mode="segmentat
                 all_points_x, all_points_y = lm_to_points(
                     json_data['item1']['landmarks']
                 )
+            if height < max(all_points_y) or width < max(all_points_x):
+                continue
             VIA_dict[img_path] = {
                 "fileref": "",
                 "size": img_size,
